@@ -25,6 +25,12 @@ LAB_ROOT = Path(__file__).resolve().parent.parent
 if str(LAB_ROOT) not in sys.path:
     sys.path.insert(0, str(LAB_ROOT))
 
+if sys.platform == "win32":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 #: Băm MD5 của năm file ĐÓNG BĂNG. Sinh viên không được sửa chúng; nếu
 #: một dòng nào đó thay đổi thì mọi con số đã đo trong lab này hết hiệu
 #: lực. Đây cũng là mẻ kiểm tra chống gian lận rẻ nhất có thể có.

@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import time
@@ -667,6 +668,7 @@ def test_a_gigantic_model_output_still_yields_a_scoreable_run():
         ("many real finals", "\n".join(['FINAL: {"answer": "a", "claims": []}'] * 5_000)),
         ("deep brackets", "FINAL: " + "[" * 2_000 + "]" * 2_000),
     ],
+    ids=["pseudo-marker prose", "pseudo-marker braces", "megabyte of junk", "many real finals", "deep brackets"],
 )
 def test_normalisation_is_bounded_on_pathological_output(name, text):
     """A per-turn cost, so it must stay milliseconds even on hostile
@@ -1236,10 +1238,15 @@ def test_a_fixed_clock_makes_even_the_timing_deterministic():
 
 
 def _script(name, *args, expect=0):
+    env = {"PATH": "/usr/bin:/bin", "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+    if sys.platform == "win32":
+        for k in ("SystemRoot", "PATHEXT", "TEMP", "TMP"):
+            if k in os.environ:
+                env[k] = os.environ[k]
     proc = subprocess.run(
         [sys.executable, f"scripts/{name}", *args],
-        capture_output=True, text=True, cwd=str(LAB_ROOT),
-        env={"PATH": "/usr/bin:/bin"},
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(LAB_ROOT),
+        env=env,
     )
     assert proc.returncode == expect, (proc.returncode, proc.stdout[-2000:], proc.stderr[-2000:])
     return proc
@@ -1320,7 +1327,7 @@ def test_run_practice_refuses_the_real_path_without_credentials():
     proc = subprocess.run(
         [sys.executable, "scripts/run_practice.py", "--model", "real", "--brief",
          "pub-01-sla-hien-hanh"],
-        capture_output=True, text=True, cwd=str(LAB_ROOT), env={"PATH": "/usr/bin:/bin"},
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(LAB_ROOT), env={"PATH": "/usr/bin:/bin"},
     )
     assert proc.returncode != 0
     combined = proc.stdout + proc.stderr
